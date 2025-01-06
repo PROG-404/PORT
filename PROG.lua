@@ -730,3 +730,236 @@ ProgLib.Window = {
 
 -- Return initialized library
 return ProgLib
+
+
+-- ElementSystem: Enhanced UI Elements with Values
+local ElementSystem = {
+    _elements = {},
+    _values = {},
+    
+    createToggleWithValue = function(parent, config)
+        config = config or {}
+        local elementId = HttpService:GenerateGUID()
+        
+        local container = ProgLib.Utils.Create("Frame", {
+            Parent = parent,
+            Size = UDim2.new(1, 0, 0, 60),
+            BackgroundTransparency = 1,
+            Name = "ToggleWithValue_" .. elementId
+        })
+        
+        -- Create Toggle Button
+        local toggle = ProgLib.Utils.Create("TextButton", {
+            Parent = container,
+            Size = UDim2.new(1, 0, 0, 30),
+            BackgroundColor3 = ThemeSystem._themes[ThemeSystem._activeTheme].Secondary,
+            Text = config.Text or "Toggle",
+            TextColor3 = ThemeSystem._themes[ThemeSystem._activeTheme].Text,
+            Font = Enum.Font.GothamSemibold,
+            TextSize = 14,
+            AutoButtonColor = false
+        }, {
+            ProgLib.Utils.Create("UICorner", {
+                CornerRadius = UDim.new(0, 6)
+            })
+        })
+        
+        -- Create Value Input
+        local valueFrame = ProgLib.Utils.Create("Frame", {
+            Parent = container,
+            Size = UDim2.new(1, 0, 0, 25),
+            Position = UDim2.new(0, 0, 0, 35),
+            BackgroundColor3 = ThemeSystem._themes[ThemeSystem._activeTheme].Background,
+            BackgroundTransparency = 0.5
+        }, {
+            ProgLib.Utils.Create("UICorner", {
+                CornerRadius = UDim.new(0, 4)
+            }),
+            
+            ProgLib.Utils.Create("TextBox", {
+                Size = UDim2.new(1, -20, 1, 0),
+                Position = UDim2.new(0, 10, 0, 0),
+                BackgroundTransparency = 1,
+                Text = tostring(config.DefaultValue or ""),
+                TextColor3 = ThemeSystem._themes[ThemeSystem._activeTheme].Text,
+                PlaceholderText = "Enter value...",
+                Font = Enum.Font.Gotham,
+                TextSize = 12,
+                ClearTextOnFocus = false
+            })
+        })
+        
+        -- Hide value frame initially
+        valueFrame.Visible = false
+        
+        -- Toggle functionality
+        local enabled = false
+        
+        local function updateToggle()
+            AnimationSystem.tween(toggle, {
+                BackgroundColor3 = enabled and 
+                    ThemeSystem._themes[ThemeSystem._activeTheme].Accent or 
+                    ThemeSystem._themes[ThemeSystem._activeTheme].Secondary
+            }, TweenInfo.new(0.2))
+            
+            -- Show/Hide value frame with animation
+            if enabled then
+                valueFrame.Visible = true
+                valueFrame.BackgroundTransparency = 1
+                AnimationSystem.tween(valueFrame, {
+                    BackgroundTransparency = 0.5
+                }, TweenInfo.new(0.2))
+            else
+                AnimationSystem.tween(valueFrame, {
+                    BackgroundTransparency = 1
+                }, TweenInfo.new(0.2)).Completed:Connect(function()
+                    valueFrame.Visible = false
+                end)
+            end
+            
+            if config.OnToggle then
+                config.OnToggle(enabled, valueFrame.TextBox.Text)
+            end
+        end
+        
+        toggle.MouseButton1Click:Connect(function()
+            enabled = not enabled
+            updateToggle()
+            EffectSystem.ripple(toggle)
+        end)
+        
+        -- Value changed handler
+        valueFrame.TextBox:GetPropertyChangedSignal("Text"):Connect(function()
+            local value = valueFrame.TextBox.Text
+            ElementSystem._values[elementId] = value
+            
+            if config.OnValueChanged then
+                config.OnValueChanged(value)
+            end
+        end)
+        
+        -- Store element reference
+        ElementSystem._elements[elementId] = {
+            Container = container,
+            Toggle = toggle,
+            ValueFrame = valueFrame,
+            Config = config
+        }
+        
+        return {
+            getId = function()
+                return elementId
+            end,
+            
+            getValue = function()
+                return valueFrame.TextBox.Text
+            end,
+            
+            setValue = function(value)
+                valueFrame.TextBox.Text = tostring(value)
+            end,
+            
+            setEnabled = function(state)
+                enabled = state
+                updateToggle()
+            end,
+            
+            isEnabled = function()
+                return enabled
+            end,
+            
+            destroy = function()
+                container:Destroy()
+                ElementSystem._elements[elementId] = nil
+                ElementSystem._values[elementId] = nil
+            end
+        }
+    end,
+    
+    createButtonWithValue = function(parent, config)
+        config = config or {}
+        local elementId = HttpService:GenerateGUID()
+        
+        local container = ProgLib.Utils.Create("Frame", {
+            Parent = parent,
+            Size = UDim2.new(1, 0, 0, 60),
+            BackgroundTransparency = 1,
+            Name = "ButtonWithValue_" .. elementId
+        })
+        
+        -- Create Button
+        local button = ProgLib.Utils.Create("TextButton", {
+            Parent = container,
+            Size = UDim2.new(1, 0, 0, 30),
+            BackgroundColor3 = ThemeSystem._themes[ThemeSystem._activeTheme].Accent,
+            Text = config.Text or "Button",
+            TextColor3 = ThemeSystem._themes[ThemeSystem._activeTheme].Text,
+            Font = Enum.Font.GothamSemibold,
+            TextSize = 14,
+            AutoButtonColor = false
+        }, {
+            ProgLib.Utils.Create("UICorner", {
+                CornerRadius = UDim.new(0, 6)
+            })
+        })
+        
+        -- Create Value Display
+        local valueDisplay = ProgLib.Utils.Create("TextLabel", {
+            Parent = container,
+            Size = UDim2.new(1, 0, 0, 25),
+            Position = UDim2.new(0, 0, 0, 35),
+            BackgroundColor3 = ThemeSystem._themes[ThemeSystem._activeTheme].Background,
+            BackgroundTransparency = 0.5,
+            Text = tostring(config.DefaultValue or ""),
+            TextColor3 = ThemeSystem._themes[ThemeSystem._activeTheme].Text,
+            Font = Enum.Font.Gotham,
+            TextSize = 12
+        }, {
+            ProgLib.Utils.Create("UICorner", {
+                CornerRadius = UDim.new(0, 4)
+            })
+        })
+        
+        -- Button click handler
+        button.MouseButton1Click:Connect(function()
+            EffectSystem.ripple(button)
+            
+            if config.OnClick then
+                local result = config.OnClick()
+                if result then
+                    valueDisplay.Text = tostring(result)
+                    ElementSystem._values[elementId] = result
+                end
+            end
+        end)
+        
+        -- Store element reference
+        ElementSystem._elements[elementId] = {
+            Container = container,
+            Button = button,
+            ValueDisplay = valueDisplay,
+            Config = config
+        }
+        
+        return {
+            getId = function()
+                return elementId
+            end,
+            
+            getValue = function()
+                return valueDisplay.Text
+            end,
+            
+            setValue = function(value)
+                valueDisplay.Text = tostring(value)
+                ElementSystem._values[elementId] = value
+            end,
+            
+            destroy = function()
+                container:Destroy()
+                ElementSystem._elements[elementId] = nil
+                ElementSystem._values[elementId] = nil
+            end
+        }
+    end
+}
