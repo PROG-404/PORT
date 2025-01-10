@@ -41,3 +41,10 @@ local hookmetamethod = (not is_blacklisted_executor and hookmetamethod) or (func
 local sethiddenproperty = sethiddenproperty or (function(...) return ... end)
 local setupvalue = setupvalue or (debug and debug.setupvalue)
 local getupvalue = getupvalue or (debug and debug.getupvalue)
+ 
+local BRING_TAG = _ENV._Bring_Tag or `b{math.random(80, 2e4)}t`
+local KILLAURA_TAG = _ENV._KillAura_Tag or `k{math.random(120, 2e4)}t`
+
+_ENV._Bring_Tag = BRING_TAG
+_ENV._KillAura_Tag = KILLAURA_TAG
+ 
